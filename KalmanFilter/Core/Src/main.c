@@ -444,6 +444,7 @@ int main(void)
 	val = 0b00000000;
 	modify_register(&device_icm20948.icm20948_states, REG_USER_CTRL, mask, val);
 	/*-------------------*/
+	// Disable Duty Cycle Mode
 //	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_LP_CONFIG, 1, test_data);
 //	INV_MSG(INV_MSG_LEVEL_INFO, "REG_LP_CONFIG : %d", test_data[0]);
 	mask = 0b01110000;
@@ -452,6 +453,7 @@ int main(void)
 	modify_register(&device_icm20948.icm20948_states, REG_LP_CONFIG, mask, val);
 
 	/*-------------------*/
+	// Reading Raw Data Interrupt Reg
 	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_INT_STATUS_1, 1, test_data);
 	INV_MSG(INV_MSG_LEVEL_INFO, "REG_INT_STATUS_1 : %d", test_data[0]);
 
@@ -463,18 +465,15 @@ int main(void)
 	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_PWR_MGMT_2, 1, test_data);
 	INV_MSG(INV_MSG_LEVEL_INFO, "REG_PWR_MGMT_2 : %d", test_data[0]);
 	mask = 0b111111;
-	val = 0b000111;
+	val = 0b000000;
 	INV_MSG(INV_MSG_LEVEL_VERBOSE, "REG_PWR_MGMT_2");
 	modify_register(&device_icm20948.icm20948_states, REG_PWR_MGMT_2, mask, val);
 
-    float accel_float[3];
-    int16_t gyro_x, gyro_y, gyro_z;
+	float accel_float[3];
+	float gyro_float[3];
     signed long  long_data[3] = {0};
-	int accel_accuracy;
-	float scale;
-
-	accel_accuracy = inv_icm20948_get_accel_accuracy();
-	scale = (1 << inv_icm20948_get_accel_fullscale(&device_icm20948.icm20948_states)) * 2.f / (1L<<15); // Convert from raw units to g's
+	float accel_scale = (1 << inv_icm20948_get_accel_fullscale(&device_icm20948.icm20948_states)) * 2.f / (1L<<15); // Convert from raw units to g's
+	float gyro_scale = (1 << inv_icm20948_get_gyro_fullscale(&device_icm20948.icm20948_states)) * 250.f / (1L<<15); // Convert from raw units to dps's
   while (1)
   {
 //    INV_MSG(INV_MSG_LEVEL_INFO, "Polling Sensor");
@@ -500,18 +499,19 @@ int main(void)
 			long_data[0] = (int16_t)((test_data[0] << 8) | test_data[1]);
 			long_data[1] = (int16_t)((test_data[2] << 8) | test_data[3]);
 		    long_data[2] = (int16_t)((test_data[4] << 8) | test_data[5]);
-		    // inv_icm20948_convert_dmp3_to_body(&device_icm20948.icm20948_states, long_data, scale, accel_float);
-			accel_float[0] = long_data[0]*scale;
-			accel_float[1] = long_data[1]*scale;
-			accel_float[2] = long_data[2]*scale;
+		    accel_float[0] = long_data[0]*accel_scale;
+			accel_float[1] = long_data[1]*accel_scale;
+			accel_float[2] = long_data[2]*accel_scale;
 
 			inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_GYRO_XOUT_H_SH, 6, test_data);
-		    gyro_x = (int16_t)((test_data[0] << 8) | test_data[1]);
-		    gyro_y = (int16_t)((test_data[2] << 8) | test_data[3]);
-		    gyro_z = (int16_t)((test_data[4] << 8) | test_data[5]);
+			long_data[0] = (int16_t)((test_data[0] << 8) | test_data[1]);
+			long_data[1] = (int16_t)((test_data[2] << 8) | test_data[3]);
+			long_data[2] = (int16_t)((test_data[4] << 8) | test_data[5]);
+			gyro_float[0] = long_data[0]*gyro_scale;
+			gyro_float[1] = long_data[1]*gyro_scale;
+			gyro_float[2] = long_data[2]*gyro_scale;
 
-		    INV_MSG(INV_MSG_LEVEL_VERBOSE, "Accel Measurements: X=%f, Y=%f, Z=%f", accel_float[0], accel_float[1], accel_float[2]);
-//		    INV_MSG(INV_MSG_LEVEL_VERBOSE, "Gyro Measurements: X=%d, Y=%d, Z=%d", gyro_x, gyro_y, gyro_z);
+		    INV_MSG(INV_MSG_LEVEL_VERBOSE, "Measurements: TS=%llu, AX=%f, AY=%f, AZ=%f, GX=%f, GY=%f, GZ=%f,", inv_icm20948_get_time_us(), accel_float[0], accel_float[1], accel_float[2], gyro_float[0], gyro_float[1], gyro_float[2]);
 		  }
 	  }
 //	if (int_read_back & 0x8)
