@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "spi.h": "c",
+        "deviceicm20948.h": "c",
+        "dataconverter.h": "c"
+    }
+}
