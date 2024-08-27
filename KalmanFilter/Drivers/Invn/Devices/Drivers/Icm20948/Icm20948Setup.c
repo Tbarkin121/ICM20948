@@ -493,7 +493,7 @@ static int inv_icm20948_is_streamed_sensor(uint8_t id)
 
 /** @brief Preprocess all timestamps so that they either contain very last time at which MEMS IRQ was fired 
  * or last time sent for the sensor + ODR */
-static uint8_t inv_icm20948_updateTs(struct inv_icm20948 * s, int * data_left_in_fifo, 
+uint8_t inv_icm20948_updateTs(struct inv_icm20948 * s, int * data_left_in_fifo, 
 	unsigned short * total_sample_cnt, uint64_t * lastIrqTimeUs)
 {
 	/** @brief Very last time in us at which IRQ was fired since flushing FIFO process was started */
@@ -577,7 +577,7 @@ int inv_icm20948_poll_sensor(struct inv_icm20948 * s, void * context,
 	
 	inv_icm20948_identify_interrupt(s, &int_read_back);
 	
-	if (int_read_back & (BIT_MSG_DMP_INT | BIT_MSG_DMP_INT_0)) {
+	if (int_read_back & (BIT_MSG_DMP_INT | BIT_MSG_DMP_INT_0 | 0x08)) { //0x8 is the raw data ready int?
 		lastIrqTimeUs = inv_icm20948_get_time_us();
 		do {
 			unsigned short total_sample_cnt = 0;

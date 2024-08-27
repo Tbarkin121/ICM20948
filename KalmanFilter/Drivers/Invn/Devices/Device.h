@@ -737,6 +737,9 @@ static inline int inv_device_read_mems_register(const inv_device_t * dev, int se
 	return INV_ERROR_NIMPL;
 }
 
+
+
+
 #ifdef __cplusplus
 }
 #endif

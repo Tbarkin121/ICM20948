@@ -22,5 +22,5 @@
 ../Drivers/Invn/Devices/Drivers/Icm20948/Icm20948Setup.c:455:5:inv_icm20948_enable_batch_timeout	4
 ../Drivers/Invn/Devices/Drivers/Icm20948/Icm20948Setup.c:471:5:inv_icm20948_load	1
 ../Drivers/Invn/Devices/Drivers/Icm20948/Icm20948Setup.c:477:12:inv_icm20948_is_streamed_sensor	3
-../Drivers/Invn/Devices/Drivers/Icm20948/Icm20948Setup.c:496:16:inv_icm20948_updateTs	9
+../Drivers/Invn/Devices/Drivers/Icm20948/Icm20948Setup.c:496:9:inv_icm20948_updateTs	9
 ../Drivers/Invn/Devices/Drivers/Icm20948/Icm20948Setup.c:551:5:inv_icm20948_poll_sensor	62

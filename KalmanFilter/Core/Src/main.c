@@ -34,7 +34,10 @@
 #include "Invn/Devices/DeviceIcm20948.h"
 #include "Invn/DynamicProtocol/DynProtocol.h"
 #include "Invn/DynamicProtocol/DynProtocolTransportUart.h"
-#include "Invn/Devices/Drivers/Icm20948/Icm20948SelfTest.h"
+
+#include "Invn/Devices/Drivers/Icm20948/Icm20948Defs.h"
+#include "Invn/Devices/Drivers/Icm20948/Icm20948Setup.h"
+
 #include "idd_io_hal.h"
 #include "delay.h"
 /* USER CODE END Includes */
@@ -58,7 +61,7 @@
 /* Define msg level */
 #define MSG_LEVEL INV_MSG_LEVEL_MAX
 
-#define USE_RAW_ACC    1
+#define USE_RAW_ACC    0
 #define USE_RAW_GYR    0
 #define USE_GRV        0
 #define USE_CAL_ACC    0
@@ -84,10 +87,10 @@ static const struct {
 	uint32_t period_us;
 } sensor_list[] = {
 #if USE_RAW_ACC
-	{ INV_SENSOR_TYPE_RAW_ACCELEROMETER, 50000 /* 20 Hz */ }, //Not exceeding 200 hz (ish)
+	{ INV_SENSOR_TYPE_RAW_ACCELEROMETER, 10000 /* 20 Hz */ }, //Not exceeding 200 hz (ish)
 #endif
 #if USE_RAW_GYR
-	{ INV_SENSOR_TYPE_RAW_GYROSCOPE,     50000 /* 20 Hz */ },
+	{ INV_SENSOR_TYPE_RAW_GYROSCOPE,     10000 /* 20 Hz */ },
 #endif
 #if USE_CAL_ACC
 	{ INV_SENSOR_TYPE_ACCELEROMETER, 50000 /* 20 Hz */ },
@@ -211,6 +214,7 @@ int _write(int file, char *ptr, int len) {
 #define TO_MASK(a) ((unsigned)(a))
 #endif
 
+void modify_register(struct inv_icm20948 * s, uint16_t reg, unsigned char mask, unsigned char value);
 /*
  * A listener object will handle sensor events
  */
@@ -275,7 +279,7 @@ int main(void)
   /*
   * Welcome message
   */
-  INV_MSG(INV_MSG_LEVEL_INFO, "########################$###########");
+  INV_MSG(INV_MSG_LEVEL_INFO, "###################################");
   INV_MSG(INV_MSG_LEVEL_INFO, "#          20948 example          #");
   INV_MSG(INV_MSG_LEVEL_INFO, "###################################");
 
@@ -359,20 +363,162 @@ int main(void)
 	/*
 	* Poll device for data
 	*/
+	unsigned char test_data[6];
+	unsigned char mask;
+	unsigned char val;
 
+	/*-------------------*/
+	// Disable DMP INT
+	mask = 0b10001111;
+	val = 0;
+	modify_register(&device_icm20948.icm20948_states, REG_INT_ENABLE, mask, val);
+	/*-------------------*/
+	// Enable Raw Data INT
+	mask = 0b1;
+	val = 0b1;
+	modify_register(&device_icm20948.icm20948_states, REG_INT_ENABLE_1, mask, val);
+
+
+	/*-------------------*/
+	mask = 0b111111;
+	val = 0;
+	INV_MSG(INV_MSG_LEVEL_VERBOSE, "REG_ACCEL_CONFIG");
+	modify_register(&device_icm20948.icm20948_states, REG_ACCEL_CONFIG, mask, val);
+	device_icm20948.icm20948_states.base_state.accel_fullscale = 0;
+
+	mask = 0b11111;
+	val = 0;
+	INV_MSG(INV_MSG_LEVEL_VERBOSE, "REG_ACCEL_CONFIG_2");
+	modify_register(&device_icm20948.icm20948_states, REG_ACCEL_CONFIG_2, mask, val);
+
+	mask = 0b1111;
+	val = 0;
+	INV_MSG(INV_MSG_LEVEL_VERBOSE, "REG_ACCEL_SMPLRT_DIV_1");
+	modify_register(&device_icm20948.icm20948_states, REG_ACCEL_SMPLRT_DIV_1, mask, val);
+
+	mask = 0b11111111;
+	val = 0;
+	INV_MSG(INV_MSG_LEVEL_VERBOSE, "REG_ACCEL_SMPLRT_DIV_2");
+	modify_register(&device_icm20948.icm20948_states, REG_ACCEL_SMPLRT_DIV_2, mask, val);
+	/*-------------------*/
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_ACCEL_XOUT_H_SH, 6, test_data);
+	INV_MSG(INV_MSG_LEVEL_VERBOSE, "Accel Meas (XH,XL,YH,YL,ZH,ZL) : %d, %d, %d, %d, %d, %d", test_data[0],test_data[1],test_data[2],test_data[3],test_data[4],test_data[5]);
+
+
+	/*-------------------*/
+	mask = 0b111111;
+	val = 0;
+	INV_MSG(INV_MSG_LEVEL_VERBOSE, "REG_GYRO_CONFIG_1");
+	modify_register(&device_icm20948.icm20948_states, REG_GYRO_CONFIG_1, mask, val);
+	device_icm20948.icm20948_states.base_state.gyro_fullscale = 0;
+
+	mask = 0b111111;
+	val = 0;
+	INV_MSG(INV_MSG_LEVEL_VERBOSE, "REG_GYRO_CONFIG_2");
+	modify_register(&device_icm20948.icm20948_states, REG_GYRO_CONFIG_2, mask, val);
+
+	mask = 0b11111111;
+	val = 0;
+	INV_MSG(INV_MSG_LEVEL_VERBOSE, "REG_GYRO_SMPLRT_DIV");
+	modify_register(&device_icm20948.icm20948_states, REG_GYRO_SMPLRT_DIV, mask, val);
+	/*-------------------*/
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_GYRO_XOUT_H_SH, 6, test_data);
+	INV_MSG(INV_MSG_LEVEL_VERBOSE, "Gyro Meas (XH,XL,YH,YL,ZH,ZL) : %d, %d, %d, %d, %d, %d", test_data[0],test_data[1],test_data[2],test_data[3],test_data[4],test_data[5]);
+
+
+
+	/*-------------------*/
+
+//	mask = 0b00100000;
+//	val = 0b00000000;
+//	INV_MSG(INV_MSG_LEVEL_VERBOSE, "REG_PWR_MGMT_1");
+//	modify_register(&device_icm20948.icm20948_states, REG_PWR_MGMT_1, mask, val);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_PWR_MGMT_1, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_PWR_MGMT_1 : %d", test_data[0]);
+	/*-------------------*/
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_PWR_MGMT_2, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_PWR_MGMT_2 : %d", test_data[0]);
+	/*-------------------*/
+	// Disable DMP
+	mask = 0b10000000;
+	val = 0b00000000;
+	modify_register(&device_icm20948.icm20948_states, REG_USER_CTRL, mask, val);
+	/*-------------------*/
+//	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_LP_CONFIG, 1, test_data);
+//	INV_MSG(INV_MSG_LEVEL_INFO, "REG_LP_CONFIG : %d", test_data[0]);
+	mask = 0b01110000;
+	val = 0;
+	INV_MSG(INV_MSG_LEVEL_VERBOSE, "REG_LP_CONFIG");
+	modify_register(&device_icm20948.icm20948_states, REG_LP_CONFIG, mask, val);
+
+	/*-------------------*/
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_INT_STATUS_1, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_INT_STATUS_1 : %d", test_data[0]);
+
+
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_PWR_MGMT_1, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_PWR_MGMT_1 : %d", test_data[0]);
+	/*-------------------*/
+	// Enable All Accel and Gyro Axis
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_PWR_MGMT_2, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_PWR_MGMT_2 : %d", test_data[0]);
+	mask = 0b111111;
+	val = 0b000111;
+	INV_MSG(INV_MSG_LEVEL_VERBOSE, "REG_PWR_MGMT_2");
+	modify_register(&device_icm20948.icm20948_states, REG_PWR_MGMT_2, mask, val);
+
+    float accel_float[3];
+    int16_t gyro_x, gyro_y, gyro_z;
+    signed long  long_data[3] = {0};
+	int accel_accuracy;
+	float scale;
+
+	accel_accuracy = inv_icm20948_get_accel_accuracy();
+	scale = (1 << inv_icm20948_get_accel_fullscale(&device_icm20948.icm20948_states)) * 2.f / (1L<<15); // Convert from raw units to g's
   while (1)
   {
 //    INV_MSG(INV_MSG_LEVEL_INFO, "Polling Sensor");
-	if (irq_from_device & TO_MASK(ACCEL_INT_Pin)) {
-		rc = inv_device_poll(device);
-		check_rc(rc);
+	  // This is the DMP Polling Stuff
+//	if (irq_from_device & TO_MASK(ACCEL_INT_Pin)) {
+//		rc = inv_device_poll(device);
+//		check_rc(rc);
+//
+//		if(rc >= 0) {
+//			__disable_irq();
+//			irq_from_device &= ~TO_MASK(ACCEL_INT_Pin);
+//			__enable_irq();
+//		}
+//	}
+	  if (irq_from_device & TO_MASK(ACCEL_INT_Pin)) {
+		  // Read INT REG
+		  inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_INT_STATUS_1, 1, test_data);
+		  // Check INT
 
-		if(rc >= 0) {
-			__disable_irq();
-			irq_from_device &= ~TO_MASK(ACCEL_INT_Pin);
-			__enable_irq();
-		}
-	}
+		  if(test_data[0])
+		  {
+			inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_ACCEL_XOUT_H_SH, 6, test_data);
+			long_data[0] = (int16_t)((test_data[0] << 8) | test_data[1]);
+			long_data[1] = (int16_t)((test_data[2] << 8) | test_data[3]);
+		    long_data[2] = (int16_t)((test_data[4] << 8) | test_data[5]);
+		    // inv_icm20948_convert_dmp3_to_body(&device_icm20948.icm20948_states, long_data, scale, accel_float);
+			accel_float[0] = long_data[0]*scale;
+			accel_float[1] = long_data[1]*scale;
+			accel_float[2] = long_data[2]*scale;
+
+			inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_GYRO_XOUT_H_SH, 6, test_data);
+		    gyro_x = (int16_t)((test_data[0] << 8) | test_data[1]);
+		    gyro_y = (int16_t)((test_data[2] << 8) | test_data[3]);
+		    gyro_z = (int16_t)((test_data[4] << 8) | test_data[5]);
+
+		    INV_MSG(INV_MSG_LEVEL_VERBOSE, "Accel Measurements: X=%f, Y=%f, Z=%f", accel_float[0], accel_float[1], accel_float[2]);
+//		    INV_MSG(INV_MSG_LEVEL_VERBOSE, "Gyro Measurements: X=%d, Y=%d, Z=%d", gyro_x, gyro_y, gyro_z);
+		  }
+	  }
+//	if (int_read_back & 0x8)
+//	{
+//		INV_MSG(INV_MSG_LEVEL_INFO, "Raw Data Int");
+//	}
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -615,6 +761,27 @@ void ext_interrupt_cb(void * context, int int_num)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	ext_interrupt_cb(0, ACCEL_INT_Pin);
+}
+
+void modify_register(struct inv_icm20948 * s, uint16_t reg, unsigned char mask, unsigned char value) {
+    unsigned char data[6];  // Adjust the size based on maximum data size needed
+    unsigned char originalValue;
+
+    // Read the current register value
+    inv_icm20948_read_mems_reg(s, reg, 1, data);
+    INV_MSG(INV_MSG_LEVEL_INFO, "Read from %u : %u", reg, data[0]);
+
+    // Modify the register value based on mask and provided value
+    originalValue = data[0];
+    data[0] = (originalValue & ~mask) | (value & mask);  // Apply mask: clear bits using ~mask, then set from value
+
+    // Write the modified value back to the register
+    inv_icm20948_write_single_mems_reg(s, reg, data[0]);
+    INV_MSG(INV_MSG_LEVEL_INFO, "Wrote to %u : %u", reg, data[0]);
+
+    // Confirm the write by reading back the register
+    inv_icm20948_read_mems_reg(s, reg, 1, data);
+    INV_MSG(INV_MSG_LEVEL_INFO, "Confirmed from %u : %u", reg, data[0]);
 }
 
 /* USER CODE END 4 */

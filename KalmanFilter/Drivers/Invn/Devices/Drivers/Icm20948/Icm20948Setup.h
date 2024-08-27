@@ -93,6 +93,8 @@ enum inv_icm20948_sensor INV_EXPORT inv_icm20948_sensor_android_2_sensor_type(in
 */
 int INV_EXPORT inv_icm20948_set_lowpower_or_highperformance(struct inv_icm20948 * s, uint8_t lowpower_or_highperformance);
 int INV_EXPORT inv_icm20948_get_lowpower_or_highperformance(struct inv_icm20948 * s, uint8_t * lowpower_or_highperformance);
+
+uint8_t inv_icm20948_updateTs(struct inv_icm20948 * s, int * data_left_in_fifo, unsigned short * total_sample_cnt, uint64_t * lastIrqTimeUs);
 #ifdef __cplusplus
 }
 #endif
