@@ -49,6 +49,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define ARRAY_SIZE 10
+
 #define MAIN_UART_ID UART1 // Through FTDI cable
 #define LOG_UART_ID  UART2 // Through ST-Link
 #define DELAY_TIMER  TIM4
@@ -474,7 +476,12 @@ int main(void)
     signed long  long_data[3] = {0};
 	float accel_scale = (1 << inv_icm20948_get_accel_fullscale(&device_icm20948.icm20948_states)) * 2.f / (1L<<15); // Convert from raw units to g's
 	float gyro_scale = (1 << inv_icm20948_get_gyro_fullscale(&device_icm20948.icm20948_states)) * 250.f / (1L<<15); // Convert from raw units to dps's
-  while (1)
+
+
+	long long unsigned int timestamps[ARRAY_SIZE]; // Array to store timestamps
+    int index = 0;  // Index for the current timestamp in the array
+
+	while (1)
   {
 //    INV_MSG(INV_MSG_LEVEL_INFO, "Polling Sensor");
 	  // This is the DMP Polling Stuff
@@ -490,11 +497,11 @@ int main(void)
 //	}
 	  if (irq_from_device & TO_MASK(ACCEL_INT_Pin)) {
 		  // Read INT REG
-		  inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_INT_STATUS_1, 1, test_data);
+//		  inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_INT_STATUS_1, 1, test_data);
 		  // Check INT
 
-		  if(test_data[0])
-		  {
+//		  if(test_data[0])
+//		  {
 			inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_ACCEL_XOUT_H_SH, 6, test_data);
 			long_data[0] = (int16_t)((test_data[0] << 8) | test_data[1]);
 			long_data[1] = (int16_t)((test_data[2] << 8) | test_data[3]);
@@ -511,8 +518,21 @@ int main(void)
 			gyro_float[1] = long_data[1]*gyro_scale;
 			gyro_float[2] = long_data[2]*gyro_scale;
 
-		    INV_MSG(INV_MSG_LEVEL_VERBOSE, "Measurements: TS=%llu, AX=%f, AY=%f, AZ=%f, GX=%f, GY=%f, GZ=%f,", inv_icm20948_get_time_us(), accel_float[0], accel_float[1], accel_float[2], gyro_float[0], gyro_float[1], gyro_float[2]);
+//		    INV_MSG(INV_MSG_LEVEL_VERBOSE, "Measurements: TS=%llu, AX=%f, AY=%f, AZ=%f, GX=%f, GY=%f, GZ=%f,", inv_icm20948_get_time_us(), accel_float[0], accel_float[1], accel_float[2], gyro_float[0], gyro_float[1], gyro_float[2]);
+
+		  timestamps[index++] = inv_icm20948_get_time_us();  // Store timestamp in the array
+		  if (index == ARRAY_SIZE) {
+			  // Print all timestamps
+			  for (int i = 0; i < ARRAY_SIZE; i++) {
+				  printf("TS = %llu\n\r", timestamps[i]);
+			  }
+			  index = 0;  // Reset index to start filling the array again
 		  }
+		__disable_irq();
+		irq_from_device &= ~TO_MASK(ACCEL_INT_Pin);
+		__enable_irq();
+
+//		  }
 	  }
 //	if (int_read_back & 0x8)
 //	{
