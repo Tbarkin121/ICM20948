@@ -58,11 +58,11 @@
 /* Define msg level */
 #define MSG_LEVEL INV_MSG_LEVEL_MAX
 
-#define USE_RAW_ACC    1
+#define USE_RAW_ACC    0
 #define USE_RAW_GYR    0
 #define USE_GRV        0
-#define USE_CAL_ACC    0
-#define USE_CAL_GYR    0
+#define USE_CAL_ACC    1
+#define USE_CAL_GYR    1
 #define USE_CAL_MAG    0
 #define USE_UCAL_GYR   0
 #define USE_UCAL_MAG   0
@@ -84,19 +84,19 @@ static const struct {
 	uint32_t period_us;
 } sensor_list[] = {
 #if USE_RAW_ACC
-	{ INV_SENSOR_TYPE_RAW_ACCELEROMETER, 50000 /* 20 Hz */ }, //Not exceeding 200 hz (ish)
+	{ INV_SENSOR_TYPE_RAW_ACCELEROMETER, 100 /* 10000 Hz */ }, //Not exceeding 1000 hz (ish) with DMP
 #endif
 #if USE_RAW_GYR
 	{ INV_SENSOR_TYPE_RAW_GYROSCOPE,     50000 /* 20 Hz */ },
 #endif
 #if USE_CAL_ACC
-	{ INV_SENSOR_TYPE_ACCELEROMETER, 50000 /* 20 Hz */ },
+	{ INV_SENSOR_TYPE_ACCELEROMETER, 100 /* 10000 Hz */ },
 #endif
 #if USE_CAL_GYR
-	{ INV_SENSOR_TYPE_GYROSCOPE, 50000 /* 20 Hz */ },
+	{ INV_SENSOR_TYPE_GYROSCOPE, 100 /* 10000 Hz */ },
 #endif
 #if USE_CAL_MAG
-	{ INV_SENSOR_TYPE_MAGNETOMETER, 50000 /* 20 Hz */ },
+	{ INV_SENSOR_TYPE_MAGNETOMETER, 100 /* 10000 Hz */ },
 #endif
 #if USE_UCAL_GYR
 	{ INV_SENSOR_TYPE_UNCAL_GYROSCOPE, 50000 /* 20 Hz */ },

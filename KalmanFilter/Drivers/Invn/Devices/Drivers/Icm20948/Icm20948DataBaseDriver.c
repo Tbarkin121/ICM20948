@@ -231,7 +231,8 @@ int inv_icm20948_initialize_lower_driver(struct inv_icm20948 * s, enum SMARTSENS
 	data = BIT_I2C_MST_CYCLE|BIT_ACCEL_CYCLE|BIT_GYRO_CYCLE;
 
 	// Set default mode to low power mode
-	result |= inv_icm20948_set_lowpower_or_highperformance(s, 0);
+		result |= inv_icm20948_set_lowpower_or_highperformance(s, 0);
+//		result |= inv_icm20948_set_lowpower_or_highperformance(s, 1); (CHANGED TO HIGH PERFORMANCE)
 	
 	// Disable Ivory DMP.
 	if(s->base_state.serial_interface == SERIAL_INTERFACE_SPI)
@@ -258,6 +259,8 @@ int inv_icm20948_initialize_lower_driver(struct inv_icm20948 * s, enum SMARTSENS
 	// Enable Interrupts.
 	data = 0x2;
 	result |= inv_icm20948_write_mems_reg(s, REG_INT_ENABLE, 1, &data); // Enable DMP Interrupt
+	data = 0x0;
+	result |= inv_icm20948_write_mems_reg(s, REG_INT_ENABLE_1, 1, &data); // Disable Raw Data Ready Interrupt
 	data = 0x1;
 	result |= inv_icm20948_write_mems_reg(s, REG_INT_ENABLE_2, 1, &data); // Enable FIFO Overflow Interrupt
 
@@ -271,8 +274,8 @@ int inv_icm20948_initialize_lower_driver(struct inv_icm20948 * s, enum SMARTSENS
 	inv_icm20948_write_mems_reg(s, REG_HW_FIX_DISABLE,1,&data);
 
 	// Setup MEMs properties.
-	s->base_state.accel_averaging = 1; //Change this value if higher sensor sample avergaing is required.
-	s->base_state.gyro_averaging = 1;  //Change this value if higher sensor sample avergaing is required.
+	s->base_state.accel_averaging = 0; //Change this value if higher sensor sample avergaing is required.
+	s->base_state.gyro_averaging = 0;  //Change this value if higher sensor sample avergaing is required.
 	inv_icm20948_set_gyro_divider(s, FIFO_DIVIDER);       //Initial sampling rate 1125Hz/19+1 = 56Hz.
 	inv_icm20948_set_accel_divider(s, FIFO_DIVIDER);      //Initial sampling rate 1125Hz/19+1 = 56Hz.
 
@@ -286,8 +289,9 @@ int inv_icm20948_initialize_lower_driver(struct inv_icm20948 * s, enum SMARTSENS
 	result |= inv_icm20948_write_single_mems_reg(s, REG_FIFO_RST, 0x1e); // Keep all but Gyro FIFO in reset.
 	result |= inv_icm20948_write_single_mems_reg(s, REG_FIFO_EN, 0x0); // Slave FIFO turned off.
 	result |= inv_icm20948_write_single_mems_reg(s, REG_FIFO_EN_2, 0x0); // Hardware FIFO turned off.
-    
+
 	s->base_state.lp_en_support = 1;
+	// s->base_state.lp_en_support = 0; // (Turned Off LP Mode)
 	
 	if(s->base_state.lp_en_support == 1)
 		inv_icm20948_set_chip_power_state(s, CHIP_LP_ENABLE, 1);

@@ -1,7 +1,7 @@
 /*
 * ________________________________________________________________________________________________________
-* Copyright © 2014-2015 InvenSense Inc. Portions Copyright © 2014-2015 Movea. All rights reserved.
-* This software, related documentation and any modifications thereto (collectively “Software”) is subject
+* Copyright ï¿½ 2014-2015 InvenSense Inc. Portions Copyright ï¿½ 2014-2015 Movea. All rights reserved.
+* This software, related documentation and any modifications thereto (collectively ï¿½Softwareï¿½) is subject
 * to InvenSense and its licensors' intellectual property rights under U.S. and international copyright and
 * other intellectual property rights laws.
 * InvenSense and its licensors retain all intellectual property and proprietary rights in and to the Software
@@ -519,19 +519,19 @@ int inv_icm20948_set_odr(struct inv_icm20948 * s, unsigned char androidSensor, u
 	if (delayInMs < s->inv_androidSensorsOdr_boundaries[androidSensor][0]) delayInMs = s->inv_androidSensorsOdr_boundaries[androidSensor][0];
 	if (delayInMs > s->inv_androidSensorsOdr_boundaries[androidSensor][1]) delayInMs = s->inv_androidSensorsOdr_boundaries[androidSensor][1];
 	switch (androidSensor) {
-		case ANDROID_SENSOR_ACCELEROMETER:
+		case ANDROID_SENSOR_RAW_ACCELEROMETER:
 			if(inv_icm20948_ctrl_androidSensor_enabled(s, ANDROID_SENSOR_RAW_ACCELEROMETER))
 				s->inv_dmp_odr_delays[INV_SENSOR_ACCEL] = min(delayInMs,s->odr_racc_ms);
 			else
 				s->inv_dmp_odr_delays[INV_SENSOR_ACCEL] = delayInMs;
-			s->odr_acc_ms = delayInMs;
+			s->odr_racc_ms = delayInMs;
 			break;
-		case ANDROID_SENSOR_RAW_ACCELEROMETER:
+		case ANDROID_SENSOR_ACCELEROMETER:
 			if(inv_icm20948_ctrl_androidSensor_enabled(s, ANDROID_SENSOR_ACCELEROMETER))
 				s->inv_dmp_odr_delays[INV_SENSOR_ACCEL] = min(delayInMs,s->odr_acc_ms);
 			else
 				s->inv_dmp_odr_delays[INV_SENSOR_ACCEL] = delayInMs;
-			s->odr_racc_ms = delayInMs;
+			s->odr_acc_ms = delayInMs;
 			break;
 
 		case ANDROID_SENSOR_STEP_DETECTOR:
