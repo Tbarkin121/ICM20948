@@ -61,14 +61,14 @@
 #define USE_RAW_ACC    0
 #define USE_RAW_GYR    0
 #define USE_GRV        0
-#define USE_CAL_ACC    1
-#define USE_CAL_GYR    1
+#define USE_CAL_ACC    0
+#define USE_CAL_GYR    0
 #define USE_CAL_MAG    0
 #define USE_UCAL_GYR   0
 #define USE_UCAL_MAG   0
 #define USE_RV         0    /* requires COMPASS*/
 #define USE_GEORV      0    /* requires COMPASS*/
-#define USE_ORI        0    /* requires COMPASS*/
+#define USE_ORI        1    /* requires COMPASS*/
 #define USE_STEPC      0
 #define USE_STEPD      0
 #define USE_SMD        0
@@ -114,7 +114,7 @@ static const struct {
 	{ INV_SENSOR_TYPE_GEOMAG_ROTATION_VECTOR, 50000 /* 20 Hz */ },
 #endif
 #if USE_ORI
-	{ INV_SENSOR_TYPE_ORIENTATION, 50000 /* 20 Hz */ },
+	{ INV_SENSOR_TYPE_ORIENTATION, 5000 /* 200 Hz */ },
 #endif
 #if USE_STEPC
 	{ INV_SENSOR_TYPE_STEP_COUNTER, ODR_NONE },
