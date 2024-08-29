@@ -34,7 +34,8 @@
 #include "Invn/Devices/DeviceIcm20948.h"
 #include "Invn/DynamicProtocol/DynProtocol.h"
 #include "Invn/DynamicProtocol/DynProtocolTransportUart.h"
-#include "Invn/Devices/Drivers/Icm20948/Icm20948SelfTest.h"
+#include "Invn/Devices/Drivers/Icm20948/Icm20948Defs.h"
+#include "Invn/Devices/Drivers/Icm20948/Icm20948Setup.h"
 #include "idd_io_hal.h"
 #include "delay.h"
 /* USER CODE END Includes */
@@ -359,6 +360,23 @@ int main(void)
 	/*
 	* Poll device for data
 	*/
+	unsigned char test_data[6];
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_USER_CTRL, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_USER_CTRL : %d", test_data[0]);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_INT_ENABLE_2, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_INT_ENABLE_2 : %d", test_data[0]);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_INT_ENABLE_3, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_INT_ENABLE_3 : %d", test_data[0]);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_FIFO_EN, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_FIFO_EN : %d", test_data[0]);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_FIFO_EN_2, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_FIFO_EN_2 : %d", test_data[0]);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_FIFO_RST, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_FIFO_RST : %d", test_data[0]);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_FIFO_MODE, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_FIFO_MODE : %d", test_data[0]);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_FIFO_CFG, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_FIFO_CFG : %d", test_data[0]);
 
   while (1)
   {
