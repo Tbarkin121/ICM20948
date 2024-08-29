@@ -378,6 +378,24 @@ int main(void)
 	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_FIFO_CFG, 1, test_data);
 	INV_MSG(INV_MSG_LEVEL_INFO, "REG_FIFO_CFG : %d", test_data[0]);
 
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_I2C_SLV0_CTRL, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_I2C_SLV0_CTRL : %d", test_data[0]);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_I2C_SLV1_CTRL, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_I2C_SLV1_CTRL : %d", test_data[0]);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_I2C_SLV2_CTRL, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_I2C_SLV2_CTRL : %d", test_data[0]);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_I2C_SLV3_CTRL, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_I2C_SLV3_CTRL : %d", test_data[0]);
+
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_I2C_SLV0_ADDR, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_I2C_SLV0_ADDR : %d", test_data[0]);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_I2C_SLV1_ADDR, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_I2C_SLV1_ADDR : %d", test_data[0]);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_I2C_SLV2_ADDR, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_I2C_SLV2_ADDR : %d", test_data[0]);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_I2C_SLV3_ADDR, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_I2C_SLV3_ADDR : %d", test_data[0]);
+
   while (1)
   {
 //    INV_MSG(INV_MSG_LEVEL_INFO, "Polling Sensor");
