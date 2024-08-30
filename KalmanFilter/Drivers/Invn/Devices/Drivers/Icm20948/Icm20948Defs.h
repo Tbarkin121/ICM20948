@@ -157,7 +157,7 @@ extern "C" {
 #define BITS_GYRO_FIFO_EN               0x0E
 
 #define REG_FIFO_RST            (BANK_0 | 0x68)
-
+#define REG_FIFO_MODE			(BANK_0 | 0x69)
 #define REG_FIFO_COUNT_H        (BANK_0 | 0x70)
 #define REG_FIFO_COUNT_L        (BANK_0 | 0x71)
 #define REG_FIFO_R_W            (BANK_0 | 0x72)

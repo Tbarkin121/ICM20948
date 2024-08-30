@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "dma.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -37,6 +38,7 @@
 
 #include "Invn/Devices/Drivers/Icm20948/Icm20948Defs.h"
 #include "Invn/Devices/Drivers/Icm20948/Icm20948Setup.h"
+#include "Invn/Devices/Drivers/Icm20948/Icm20948MPUFifoControl.h"
 
 #include "idd_io_hal.h"
 #include "delay.h"
@@ -49,7 +51,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define ARRAY_SIZE 10
+#define ARRAY_SIZE 250
+#define DATA_FIELDS 9
 
 #define MAIN_UART_ID UART1 // Through FTDI cable
 #define LOG_UART_ID  UART2 // Through ST-Link
@@ -60,6 +63,7 @@
 #define ODR_NONE       0   /* Asynchronous sensors don't need to have a configured ODR */
 
 
+
 /* Define msg level */
 #define MSG_LEVEL INV_MSG_LEVEL_MAX
 
@@ -68,7 +72,7 @@
 #define USE_GRV        0
 #define USE_CAL_ACC    0
 #define USE_CAL_GYR    0
-#define USE_CAL_MAG    0
+#define USE_CAL_MAG    1
 #define USE_UCAL_GYR   0
 #define USE_UCAL_MAG   0
 #define USE_RV         0    /* requires COMPASS*/
@@ -262,6 +266,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_SPI3_Init();
   MX_TIM4_Init();
@@ -369,6 +374,26 @@ int main(void)
 	unsigned char mask;
 	unsigned char val;
 
+	/*-------SLV I2C Regs-----------*/
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_I2C_SLV0_CTRL, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_I2C_SLV0_CTRL : %d", test_data[0]);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_I2C_SLV1_CTRL, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_I2C_SLV1_CTRL : %d", test_data[0]);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_I2C_SLV2_CTRL, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_I2C_SLV2_CTRL : %d", test_data[0]);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_I2C_SLV3_CTRL, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_I2C_SLV3_CTRL : %d", test_data[0]);
+
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_I2C_SLV0_ADDR, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_I2C_SLV0_ADDR : %d", test_data[0]);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_I2C_SLV1_ADDR, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_I2C_SLV1_ADDR : %d", test_data[0]);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_I2C_SLV2_ADDR, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_I2C_SLV2_ADDR : %d", test_data[0]);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_I2C_SLV3_ADDR, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_I2C_SLV3_ADDR : %d", test_data[0]);
+
+
 	/*-------------------*/
 	// Disable DMP INT
 	mask = 0b10001111;
@@ -442,7 +467,7 @@ int main(void)
 	INV_MSG(INV_MSG_LEVEL_INFO, "REG_PWR_MGMT_2 : %d", test_data[0]);
 	/*-------------------*/
 	// Disable DMP
-	mask = 0b10000000;
+	mask = 0b11000000;
 	val = 0b00000000;
 	modify_register(&device_icm20948.icm20948_states, REG_USER_CTRL, mask, val);
 	/*-------------------*/
@@ -450,7 +475,7 @@ int main(void)
 //	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_LP_CONFIG, 1, test_data);
 //	INV_MSG(INV_MSG_LEVEL_INFO, "REG_LP_CONFIG : %d", test_data[0]);
 	mask = 0b01110000;
-	val = 0;
+	val = 0b01000000;
 	INV_MSG(INV_MSG_LEVEL_VERBOSE, "REG_LP_CONFIG");
 	modify_register(&device_icm20948.icm20948_states, REG_LP_CONFIG, mask, val);
 
@@ -471,16 +496,58 @@ int main(void)
 	INV_MSG(INV_MSG_LEVEL_VERBOSE, "REG_PWR_MGMT_2");
 	modify_register(&device_icm20948.icm20948_states, REG_PWR_MGMT_2, mask, val);
 
-	float accel_float[3];
-	float gyro_float[3];
-    signed long  long_data[3] = {0};
+
+	/*--------- FIFO Stuff -------*/
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_INT_ENABLE_2, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_INT_ENABLE_2 : %d", test_data[0]);
+	modify_register(&device_icm20948.icm20948_states, REG_INT_ENABLE_2, 0b00011111, 1);
+
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_INT_ENABLE_3, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_INT_ENABLE_3 : %d", test_data[0]);
+	modify_register(&device_icm20948.icm20948_states, REG_INT_ENABLE_3, 0b00011111, 0);
+
+	// FIFO EN for Mag
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_FIFO_EN, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_FIFO_EN : %d", test_data[0]);
+	modify_register(&device_icm20948.icm20948_states, REG_FIFO_EN, 0b00001111, 0b0001);
+
+	// FIFO EN for Accel and Gyro and Temp
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_FIFO_EN_2, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_FIFO_EN_2 : %d", test_data[0]);
+	modify_register(&device_icm20948.icm20948_states, REG_FIFO_EN_2, 0b00011111, 0b11111);
+
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_FIFO_RST, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_FIFO_RST : %d", test_data[0]);
+	modify_register(&device_icm20948.icm20948_states, REG_FIFO_RST, 0b00011111, 0b11111);
+
+	modify_register(&device_icm20948.icm20948_states, REG_FIFO_RST, 0b00011111, 0b11110);
+
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_FIFO_MODE, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_FIFO_MODE : %d", test_data[0]);
+	inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_FIFO_CFG, 1, test_data);
+	INV_MSG(INV_MSG_LEVEL_INFO, "REG_FIFO_CFG : %d", test_data[0]);
+
+
 	float accel_scale = (1 << inv_icm20948_get_accel_fullscale(&device_icm20948.icm20948_states)) * 2.f / (1L<<15); // Convert from raw units to g's
 	float gyro_scale = (1 << inv_icm20948_get_gyro_fullscale(&device_icm20948.icm20948_states)) * 250.f / (1L<<15); // Convert from raw units to dps's
+	float mag_scale = 4912.f / (1L<<15); // Convert from raw units to uT
+	float accel_float[3];
+	float gyro_float[3];
+	float mag_float[3];
+	int32_t  long_data[8] = {0};
+	int32_t  long_data2[8] = {0};
+	uint64_t timestamps[ARRAY_SIZE];
+	uint16_t fifo_data_count[ARRAY_SIZE];
+	float datalog[ARRAY_SIZE][DATA_FIELDS]; // Array to store timestamps
 
-
-	long long unsigned int timestamps[ARRAY_SIZE]; // Array to store timestamps
-    int index = 0;  // Index for the current timestamp in the array
-
+	uint16_t idx = 0;  // Index for the current timestamp in the array
+	unsigned char fifo_data[16];
+	unsigned char fifo_data_2[16];
+	unsigned char fifo_data_3[2];
+	// Enable FIFO
+	mask = 0b11000000;
+	val = 0b01000000;
+	modify_register(&device_icm20948.icm20948_states, REG_USER_CTRL, mask, val);
 	while (1)
   {
 //    INV_MSG(INV_MSG_LEVEL_INFO, "Polling Sensor");
@@ -502,31 +569,95 @@ int main(void)
 
 //		  if(test_data[0])
 //		  {
-			inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_ACCEL_XOUT_H_SH, 6, test_data);
-			long_data[0] = (int16_t)((test_data[0] << 8) | test_data[1]);
-			long_data[1] = (int16_t)((test_data[2] << 8) | test_data[3]);
-		    long_data[2] = (int16_t)((test_data[4] << 8) | test_data[5]);
-		    accel_float[0] = long_data[0]*accel_scale;
-			accel_float[1] = long_data[1]*accel_scale;
-			accel_float[2] = long_data[2]*accel_scale;
+//		     uint16_t fifo_data_cnt;
 
-			inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_GYRO_XOUT_H_SH, 6, test_data);
-			long_data[0] = (int16_t)((test_data[0] << 8) | test_data[1]);
-			long_data[1] = (int16_t)((test_data[2] << 8) | test_data[3]);
-			long_data[2] = (int16_t)((test_data[4] << 8) | test_data[5]);
-			gyro_float[0] = long_data[0]*gyro_scale;
-			gyro_float[1] = long_data[1]*gyro_scale;
-			gyro_float[2] = long_data[2]*gyro_scale;
+//		     uint16_t data_read=0;
 
-//		    INV_MSG(INV_MSG_LEVEL_VERBOSE, "Measurements: TS=%llu, AX=%f, AY=%f, AZ=%f, GX=%f, GY=%f, GZ=%f,", inv_icm20948_get_time_us(), accel_float[0], accel_float[1], accel_float[2], gyro_float[0], gyro_float[1], gyro_float[2]);
+//		     inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_FIFO_COUNT_H, 2, fifo_data_3);
+//		     fifo_data_cnt = fifo_data[0]<<8 | fifo_data[1];
+//			 INV_MSG(INV_MSG_LEVEL_INFO, "FIFO DATA COUNT : %d", fifo_data_cnt);
+//
 
-		  timestamps[index++] = inv_icm20948_get_time_us();  // Store timestamp in the array
-		  if (index == ARRAY_SIZE) {
-			  // Print all timestamps
-			  for (int i = 0; i < ARRAY_SIZE; i++) {
-				  printf("TS = %llu\n\r", timestamps[i]);
-			  }
-			  index = 0;  // Reset index to start filling the array again
+
+
+			 inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_FIFO_R_W, 16, fifo_data);
+			 inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_FIFO_R_W, 16, fifo_data_2);
+
+
+//			 int data_left_in_fifo=0;
+//			 unsigned short total_sample_cnt = 0;
+//			 uint64_t lastIrqTimeUs = inv_icm20948_get_time_us();
+//			 inv_icm20948_fifo_swmirror(&device_icm20948.icm20948_states, &data_left_in_fifo, &total_sample_cnt, &lastIrqTimeUs);
+
+//		     inv_icm20948_read_mems_reg(&device_icm20948.icm20948_states, REG_FIFO_COUNT_H, 2, fifo_data);
+//			 fifo_data_cnt = fifo_data[0]<<8 | fifo_data[1];
+//			 INV_MSG(INV_MSG_LEVEL_INFO, "FIFO DATA COUNT After : %d", fifo_data_cnt);
+
+			 long_data[0] =  (int16_t)((fifo_data[0] << 8) | fifo_data[1]);
+			 long_data[1] = (int16_t)((fifo_data[2] << 8) | fifo_data[3]);
+			 long_data[2] = (int16_t)((fifo_data[4] << 8) | fifo_data[5]);
+			 long_data[3] = (int16_t)((fifo_data[6] << 8) | fifo_data[7]);
+			 long_data[4] = (int16_t)((fifo_data[8] << 8) | fifo_data[9]);
+			 long_data[5] = (int16_t)((fifo_data[10] << 8) | fifo_data[11]);
+			 long_data[6] = (int16_t)((fifo_data[12] << 8) | fifo_data[13]);
+			 long_data[7] = (int16_t)((fifo_data[14] << 8) | fifo_data[15]);
+
+			 long_data2[0] = (int16_t)((fifo_data_2[0] << 8) | fifo_data_2[1]);
+			 long_data2[1] = (int16_t)((fifo_data_2[2] << 8) | fifo_data_2[3]);
+			 long_data2[2] = (int16_t)((fifo_data_2[4] << 8) | fifo_data_2[5]);
+			 long_data2[3] = (int16_t)((fifo_data_2[6] << 8) | fifo_data_2[7]);
+			 long_data2[4] = (int16_t)((fifo_data_2[8] << 8) | fifo_data_2[9]);
+			 long_data2[5] = (int16_t)((fifo_data_2[10] << 8) | fifo_data_2[11]);
+			 long_data2[6] = (int16_t)((fifo_data_2[12] << 8) | fifo_data_2[13]);
+			 long_data2[7] = (int16_t)((fifo_data_2[14] << 8) | fifo_data_2[15]);
+
+
+//			 accel_float[0] = long_data2[0]*accel_scale;
+//			 accel_float[1] = long_data2[1]*accel_scale;
+//			 accel_float[2] = long_data2[2]*accel_scale;
+//			 gyro_float[0] = long_data2[3]*gyro_scale;
+//			 gyro_float[1] = long_data2[4]*gyro_scale;
+//			 gyro_float[2] = long_data2[5]*gyro_scale;
+//			 mag_float[0] = long_data[4]*mag_scale;
+//			 mag_float[1] = long_data[5]*mag_scale;
+//			 mag_float[2] = long_data[6]*mag_scale;
+
+		 accel_float[0] = long_data[0]*accel_scale;
+		 accel_float[1] = long_data[1]*accel_scale;
+		 accel_float[2] = long_data[2]*accel_scale;
+		 gyro_float[0] = long_data[3]*gyro_scale;
+		 gyro_float[1] = long_data[4]*gyro_scale;
+		 gyro_float[2] = long_data[5]*gyro_scale;
+		 mag_float[0] = long_data[6]*mag_scale;
+		 mag_float[1] = long_data[7]*mag_scale;
+		 mag_float[2] = long_data2[0]*mag_scale;
+
+		  timestamps[idx] = last_irq_time;
+		  datalog[idx][0] = accel_float[0];
+		  datalog[idx][1] = accel_float[1];
+		  datalog[idx][2] = accel_float[2];
+		  datalog[idx][3] = gyro_float[0];
+		  datalog[idx][4] = gyro_float[1];
+		  datalog[idx][5] = gyro_float[2];
+		  datalog[idx][6] = mag_float[0];
+		  datalog[idx][7] = mag_float[1];
+		  datalog[idx][8] = mag_float[2];
+		  fifo_data_count[idx] = (int16_t)((fifo_data_3[0] << 8) | fifo_data_3[1]);
+
+
+		  idx++;
+		  if (idx == ARRAY_SIZE) {
+			for (int i = 0; i < ARRAY_SIZE; i++) {
+				printf("TS = %llu, Accel = (%f, %f, %f), Gyro = (%f, %f, %f), Mag = (%f, %f, %f), FIFO = %d\n\r",
+						timestamps[i], datalog[i][0], datalog[i][1], datalog[i][2],
+						datalog[i][3], datalog[i][4], datalog[i][5],
+						datalog[i][6], datalog[i][7], datalog[i][8], fifo_data_count[i]);
+			}
+			idx = 0;  // Reset index to start filling the array again
+			modify_register(&device_icm20948.icm20948_states, REG_FIFO_RST, 0b00011111, 0b11111);
+
+			modify_register(&device_icm20948.icm20948_states, REG_FIFO_RST, 0b00011111, 0b11110);
+
 		  }
 		__disable_irq();
 		irq_from_device &= ~TO_MASK(ACCEL_INT_Pin);

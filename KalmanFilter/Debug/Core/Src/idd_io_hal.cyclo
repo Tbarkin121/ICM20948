@@ -1,4 +1,5 @@
-../Core/Src/idd_io_hal.c:40:12:idd_io_hal_init_spi	1
-../Core/Src/idd_io_hal.c:46:12:idd_io_hal_read_reg_spi	1
-../Core/Src/idd_io_hal.c:58:12:idd_io_hal_write_reg_spi	1
-../Core/Src/idd_io_hal.c:80:26:idd_io_hal_get_serif_instance_spi	1
+../Core/Src/idd_io_hal.c:42:12:idd_io_hal_init_spi	1
+../Core/Src/idd_io_hal.c:48:12:idd_io_hal_read_reg_spi	4
+../Core/Src/idd_io_hal.c:80:12:idd_io_hal_write_reg_spi	2
+../Core/Src/idd_io_hal.c:114:26:idd_io_hal_get_serif_instance_spi	1
+../Core/Src/idd_io_hal.c:119:6:HAL_SPI_TxRxCpltCallback	1
